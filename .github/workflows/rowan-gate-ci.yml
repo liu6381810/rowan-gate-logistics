@@ -1,0 +1,22 @@
+name: Rowan Gate CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Scan logistics modules
+        run: |
+          echo "::error file=src/venue_scheduler.py,line=28::book() raises a bare KeyError for unknown rooms, which escapes the scheduling API as an unhandled 500; raise a domain-specific VenueNotFoundError instead."
+          echo "::warning file=src/venue_scheduler.py,line=8::parse_session_window splits raw_window on the pipe separator without validating it first; a malformed window string raises an unhandled ValueError during session import."
+          echo "::warning file=src/venue_scheduler.py,line=39::turnover_gap_ok returns False when the turnover gap is too short but never logs the rejected interval, leaving venue audit trails incomplete."
+          echo "::warning file=src/catering_planner.py,line=18::split_meal_counts assumes every meal option defines a share key; an option missing it raises KeyError while catering counts are being published."
+          echo "::error file=src/catering_planner.py,line=23::Per-option rounding can make meal counts drift from the confirmed headcount; reconcile rounding so the split sums exactly to total_headcount."
+          echo "::error file=src/transport_router.py,line=17::assign() raises a bare KeyError for stops not on the route; shuttle check-in should surface a route-specific error that staff can act on."
+          exit 1
